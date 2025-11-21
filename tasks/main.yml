@@ -1,0 +1,64 @@
+---
+
+- name: Load distribution-specific variables
+  ansible.builtin.include_vars: "{{ ansible_facts['os_family'] }}.yml"
+
+- name: Make sure that the unarchive utilities that we need are installed
+  ansible.builtin.package:
+    name: "{{ starship_packages }}"
+    state: present
+
+- name: Find the latest starship version
+  when: starship_version == "latest"
+  block:
+    - name: Find latest releases
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/starship/starship/releases/latest
+        return_content: true
+      register: starship_release_output
+      check_mode: false
+    - name: Set version
+      ansible.builtin.set_fact:
+        _starship_version: "{{ starship_release_output.json.tag_name }}"
+
+- name: Set the starship version
+  when: starship_version != "latest"
+  ansible.builtin.set_fact:
+    _starship_version: "{{ starship_version }}"
+
+- name: Check if starship is already installed
+  ansible.builtin.command: starship --version
+  register: starship_version_output
+  ignore_errors: true
+  changed_when: false
+  become: false
+
+- name: Determine starship version and other variables
+  ignore_errors: "{{ ansible_check_mode }}"
+  ansible.builtin.set_fact:
+    starship_install: "{{ starship_version_output.rc != 0 or not (_starship_version in starship_version_output.stdout) }}"
+
+- name: Download the starship tarball.
+  ansible.builtin.get_url:
+    url: "https://github.com/starship/starship/releases/download/{{ _starship_version }}/starship-x86_64-unknown-linux-gnu.tar.gz"
+    dest: "/tmp/starship-{{ _starship_version }}.tar.gz"
+    mode: '0755'
+  when:
+    - (starship_install | default(false))
+    - not ansible_check_mode
+    - starship_version_output.rc != 0
+
+- name: Extract the tarball.
+  ansible.builtin.unarchive:
+    src: "/tmp/starship-{{ _starship_version }}.tar.gz"
+    dest: /usr/bin
+    owner: root
+    group: root
+    mode: '0755'
+    remote_src: true
+  register: extracted
+  notify: Clean up the extracted tarball.
+  when:
+    - (starship_install | default(false))
+    - not ansible_check_mode
+    - starship_version_output.rc != 0

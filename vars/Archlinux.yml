@@ -1,0 +1,5 @@
+---
+starship_packages:
+  - unzip
+  - xz
+  - tar

@@ -1,0 +1,5 @@
+---
+- name: Clean up the extracted tarball.
+  ansible.builtin.file:
+    path: "/tmp/starship-{{ _starship_version }}.tar.gz"
+    state: absent
