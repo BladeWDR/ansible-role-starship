@@ -1,0 +1,8 @@
+---
+dependencies: []
+
+galaxy_info:
+  role_name: starship
+  author: BladeWDR
+  description: Starship prompt for Linux
+  license: MIT
