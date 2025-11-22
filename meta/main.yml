@@ -3,6 +3,7 @@ dependencies: []
 
 galaxy_info:
   role_name: starship
-  author: BladeWDR
+  author: bladewdr
   description: Starship prompt for Linux
   license: MIT
+  min_ansible_version: "2.18"
